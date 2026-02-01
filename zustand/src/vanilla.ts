@@ -1,4 +1,5 @@
-type SetStateInternal<T> = {
+// setState의 실제 호출 시그니처 타입
+type SetStateInternal<T> = {  
   _(
     partial: T | Partial<T> | { _(state: T): T | Partial<T> }['_'],
     replace?: false,
@@ -6,6 +7,7 @@ type SetStateInternal<T> = {
   _(state: T | { _(state: T): T }['_'], replace: true): void
 }['_']
 
+// store의 최소 기능 집합을 정의한 인터페이스
 export interface StoreApi<T> {
   setState: SetStateInternal<T>
   getState: () => T
