@@ -38,6 +38,7 @@ export interface StoreMutators<S, A> {}
 // 현재 타입 시스템에 등록된 모든 mutator의 이름(key)만 모아둔 공식 mutator 식별자 집합
 export type StoreMutatorIdentifier = keyof StoreMutators<unknown, unknown>
 
+// store의 초기 상태와 로직을 정의하는 상태 생성 함수의 타입
 export type StateCreator<
   T,
   Mis extends [StoreMutatorIdentifier, unknown][] = [],
