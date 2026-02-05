@@ -50,7 +50,7 @@ export type StateCreator<
   store: Mutate<StoreApi<T>, Mis>,
 ) => U) & { $$storeMutators?: Mos }
 
-
+// StateCreator(설계도)를 받아 mutator 조합을 반영한 StoreApi(실제 store 인스턴스)로 변환하는 함수의 타입
 type CreateStore = {
   <T, Mos extends [StoreMutatorIdentifier, unknown][] = []>(
     initializer: StateCreator<T, [], Mos>,
