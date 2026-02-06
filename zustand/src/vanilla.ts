@@ -65,44 +65,51 @@ type CreateStoreImpl = <
   T,
   Mos extends [StoreMutatorIdentifier, unknown][] = [],
 >(
-  initializer: StateCreator<T, [], Mos>,
+  initializer: StateCreator<T, [], Mos>, // 해당 단계에서는 mutator가 이미 적용되어 있음(두 번째 인자가 빈 배열)
 ) => Mutate<StoreApi<T>, Mos>
 
+// zustand에서 실제로 store 인스턴스를 만들고,
+// state 변경·조회·구독 로직을 하나의 API로 묶는 핵심 생성 함수
 const createStoreImpl: CreateStoreImpl = (createState) => {
   type TState = ReturnType<typeof createState>
   type Listener = (state: TState, prevState: TState) => void
   let state: TState
-  const listeners: Set<Listener> = new Set()
+  const listeners: Set<Listener> = new Set() // 중복된 Listener들은 허용 안 함
 
   const setState: StoreApi<TState>['setState'] = (partial, replace) => {
     // TODO: Remove type assertion once https://github.com/microsoft/TypeScript/issues/37663 is resolved
     // https://github.com/microsoft/TypeScript/issues/37663#issuecomment-759728342
     const nextState =
       typeof partial === 'function'
-        ? (partial as (state: TState) => TState)(state)
-        : partial
-    if (!Object.is(nextState, state)) {
-      const previousState = state
-      state =
-        (replace ?? (typeof nextState !== 'object' || nextState === null))
-          ? (nextState as TState)
-          : Object.assign({}, state, nextState)
-      listeners.forEach((listener) => listener(state, previousState))
+        ? (partial as (state: TState) => TState)(state) // 함수면 현재 state를 넣어서 실행
+        : partial // 함수가 아니라 값이면 그 자체를 nextState로 사용
+    if (!Object.is(nextState, state)) { // nextState가 state가 같지 않을 때만 아래 로직을 실행
+      const previousState = state // previousState가 state가 바라보던 값을 그대로 참조하게 함
+      state = // 그 후 state의 값 변경
+        (replace ?? (typeof nextState !== 'object' || nextState === null)) // replace가 명시되거나, nextState가 객체가 아니거나 null이 아닐 때
+          ? (nextState as TState) // state에 nextState의 값을 덮어씌우기
+          : Object.assign({}, state, nextState) // 아니라면 state와 nextState를 병합
+      listeners.forEach((listener) => listener(state, previousState)) //subscribe에서 listener가 추가될 예정
     }
   }
 
+  // 현재 상태(state) 반환
   const getState: StoreApi<TState>['getState'] = () => state
 
+  // 초기 상태(initialState) 반환
   const getInitialState: StoreApi<TState>['getInitialState'] = () =>
     initialState
 
   const subscribe: StoreApi<TState>['subscribe'] = (listener) => {
-    listeners.add(listener)
+    listeners.add(listener) // 인자로 받은 listener 함수를 listeners라는 Set에 등록
     // Unsubscribe
-    return () => listeners.delete(listener)
+    return () => listeners.delete(listener) // 호출하면 해당 listener를 Set에서 제거하는 함수를 반환
   }
 
+  // store API 객체
   const api = { setState, getState, getInitialState, subscribe }
+
+  // 1. createState 실행
   const initialState = (state = createState(setState, getState, api))
   return api as any
 }
