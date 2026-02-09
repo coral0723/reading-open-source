@@ -114,5 +114,6 @@ const createStoreImpl: CreateStoreImpl = (createState) => {
   return api as any
 }
 
+// createStore는 createStoreImpl을 감싸서, 즉시 실행과 지연 실행을 모두 지원하는 public API
 export const createStore = ((createState) =>
   createState ? createStoreImpl(createState) : createStoreImpl) as CreateStore
