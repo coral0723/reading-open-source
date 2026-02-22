@@ -8,6 +8,7 @@ import type {
   StoreMutatorIdentifier,
 } from './vanilla.ts'
 
+// React 훅이 동작하는 데 필요한 최소한의 인터페이스만 추려낸 타입
 type ReadonlyStoreApi<T> = Pick<
   StoreApi<T>,
   'getState' | 'getInitialState' | 'subscribe'
