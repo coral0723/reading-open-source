@@ -15,6 +15,8 @@ type ReadonlyStoreApi<T> = Pick<
 >
 
 const identity = <T>(arg: T): T => arg
+
+
 export function useStore<S extends ReadonlyStoreApi<unknown>>(
   api: S,
 ): ExtractState<S>
@@ -24,6 +26,7 @@ export function useStore<S extends ReadonlyStoreApi<unknown>, U>(
   selector: (state: ExtractState<S>) => U,
 ): U
 
+// zustand store와 React 컴포넌트를 연결하는 hook
 export function useStore<TState, StateSlice>(
   api: ReadonlyStoreApi<TState>,
   selector: (state: TState) => StateSlice = identity as any,
