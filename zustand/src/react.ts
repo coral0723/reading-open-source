@@ -40,6 +40,7 @@ export function useStore<TState, StateSlice>(
   return slice
 }
 
+// 호출 시에는 Hook으로, 속성 접근 시에는 Store API로 동작하는 타입
 export type UseBoundStore<S extends ReadonlyStoreApi<unknown>> = {
   (): ExtractState<S>
   <U>(selector: (state: ExtractState<S>) => U): U
