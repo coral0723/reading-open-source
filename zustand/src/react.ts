@@ -46,6 +46,7 @@ export type UseBoundStore<S extends ReadonlyStoreApi<unknown>> = {
   <U>(selector: (state: ExtractState<S>) => U): U
 } & S
 
+// create 함수의 오버로딩 정의: 일반 호출과 타입 추론을 위한 커링 방식을 모두 지원
 type Create = {
   <T, Mos extends [StoreMutatorIdentifier, unknown][] = []>(
     initializer: StateCreator<T, [], Mos>,
@@ -55,6 +56,7 @@ type Create = {
   ) => UseBoundStore<Mutate<StoreApi<T>, Mos>>
 }
 
+// 스토어를 생성하고, 이를 리액트 훅(useStore)에 클로저로 바인딩하여 반환하는 실제 구현체
 const createImpl = <T>(createState: StateCreator<T, [], []>) => {
   const api = createStore(createState)
 
@@ -65,5 +67,6 @@ const createImpl = <T>(createState: StateCreator<T, [], []>) => {
   return useBoundStore
 }
 
+// 인자 유무에 따라 즉시 스토어를 생성하거나, 타입 지정을 위한 커링 함수(createImpl)를 반환하는 공개 API
 export const create = (<T>(createState: StateCreator<T, [], []> | undefined) =>
   createState ? createImpl(createState) : createImpl) as Create
