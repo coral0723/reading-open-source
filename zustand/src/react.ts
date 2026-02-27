@@ -1,0 +1,72 @@
+import React from 'react'
+import { createStore } from './vanilla.ts'
+import type {
+  ExtractState,
+  Mutate,
+  StateCreator,
+  StoreApi,
+  StoreMutatorIdentifier,
+} from './vanilla.ts'
+
+// React 훅이 동작하는 데 필요한 최소한의 인터페이스만 추려낸 타입
+type ReadonlyStoreApi<T> = Pick<
+  StoreApi<T>,
+  'getState' | 'getInitialState' | 'subscribe'
+>
+
+const identity = <T>(arg: T): T => arg
+
+
+export function useStore<S extends ReadonlyStoreApi<unknown>>(
+  api: S,
+): ExtractState<S>
+
+export function useStore<S extends ReadonlyStoreApi<unknown>, U>(
+  api: S,
+  selector: (state: ExtractState<S>) => U,
+): U
+
+// zustand store와 React 컴포넌트를 연결하는 hook
+export function useStore<TState, StateSlice>(
+  api: ReadonlyStoreApi<TState>,
+  selector: (state: TState) => StateSlice = identity as any,
+) {
+  const slice = React.useSyncExternalStore(
+    api.subscribe,
+    React.useCallback(() => selector(api.getState()), [api, selector]),
+    React.useCallback(() => selector(api.getInitialState()), [api, selector]),
+  )
+  React.useDebugValue(slice)
+  return slice
+}
+
+// 호출 시에는 Hook으로, 속성 접근 시에는 Store API로 동작하는 타입
+export type UseBoundStore<S extends ReadonlyStoreApi<unknown>> = {
+  (): ExtractState<S>
+  <U>(selector: (state: ExtractState<S>) => U): U
+} & S
+
+// create 함수의 오버로딩 정의: 일반 호출과 타입 추론을 위한 커링 방식을 모두 지원
+type Create = {
+  <T, Mos extends [StoreMutatorIdentifier, unknown][] = []>(
+    initializer: StateCreator<T, [], Mos>,
+  ): UseBoundStore<Mutate<StoreApi<T>, Mos>>
+  <T>(): <Mos extends [StoreMutatorIdentifier, unknown][] = []>(
+    initializer: StateCreator<T, [], Mos>,
+  ) => UseBoundStore<Mutate<StoreApi<T>, Mos>>
+}
+
+// 스토어를 생성하고, 이를 리액트 훅(useStore)에 클로저로 바인딩하여 반환하는 실제 구현체
+const createImpl = <T>(createState: StateCreator<T, [], []>) => {
+  const api = createStore(createState)
+
+  const useBoundStore: any = (selector?: any) => useStore(api, selector)
+
+  Object.assign(useBoundStore, api)
+
+  return useBoundStore
+}
+
+// 인자 유무에 따라 즉시 스토어를 생성하거나, 타입 지정을 위한 커링 함수(createImpl)를 반환하는 공개 API
+export const create = (<T>(createState: StateCreator<T, [], []> | undefined) =>
+  createState ? createImpl(createState) : createImpl) as Create
